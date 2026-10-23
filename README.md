@@ -3,7 +3,7 @@
 Next.js 14 (TypeScript) + Prisma on Neon Postgres + Vercel Blob (private) for files. Dark glass UI with a terminal feel, a floating dock and the UIDA (User Interface Device Adaptation) blob.
 
 ## Set up on Vercel (Neon + Blob already connected)
-1. **Env vars** (Vercel > Project > Settings > Environment Variables). The Neon integration with prefix `STORAGE` should already have created `STORAGE_DATABASE_URL` and `STORAGE_DATABASE_URL_UNPOOLED`. Add `AUTH_SECRET` and `CODE_PEPPER` (each from `openssl rand -hex 32`). Optional: `OCR_SERVICE_URL`, `OCR_API_KEY`.
+1. **Env vars** (Vercel > Project > Settings > Environment Variables). The Neon integration (no prefix) creates `POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING`, which the app uses. Do not point the app at a different database (for example a Prisma Postgres one with a `STORAGE_` prefix) unless you run `db/schema.sql` there too. Add `AUTH_SECRET` and `CODE_PEPPER` (each from `openssl rand -hex 32`) and enable them for Production, Preview and Development. Optional: `OCR_SERVICE_URL`, `OCR_API_KEY`.
 2. **Blob:** Vercel > Storage > Create > Blob, choose **private**, connect it to the project and leave its prefix at the default so `BLOB_READ_WRITE_TOKEN` is created.
 3. **Tables:** run `db/schema.sql` in the Neon SQL Editor (Vercel > Storage > your database > Open in Neon), or locally `npm run db:push`. Do this before the first deploy.
 4. **Deploy:** push to GitHub; Vercel builds it. Preview deployments get their own Neon branch, which copies the tables as they were when the branch was made.
