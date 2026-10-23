@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Neon via the Vercel integration with the env prefix "STORAGE": pooled URL for the app, unpooled (direct) URL for prisma db push / migrate.
+datasource db {
+  provider  = "postgresql"
+  url       = env("STORAGE_DATABASE_URL")
+  directUrl = env("STORAGE_DATABASE_URL_UNPOOLED")
+}
+
+enum Role {
+  STUDENT
+  SCHOOL
+}
+
+enum Status {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(STUDENT)
+  fullName     String
+  studentId    String?     @unique
+  rollNo       String?
+  school       String?
+  createdAt    DateTime    @default(now())
+  documents    Document[]
+  shares       Share[]
+  accessLog    AccessLog[]
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  docType   String
+  fileName  String
+  mime      String
+  sha256    String
+  blobUrl   String
+  blobPath  String
+  pdfUrl    String?  // searchable PDF made by the OCR service (original is kept untouched)
+  pdfPath   String?
+  ocrStatus String   @default("none") // none | done | failed
+  extracted Json?    // fields read from the document by AI
+  flag      String?  // set when extracted name / roll no. differ from the account
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+model Share {
+  id        String   @id @default(uuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  codeHash  String
+  docIds    String[]
+  expiresAt DateTime
+
+  @@index([ownerId, codeHash])
+}
+
+model AccessLog {
+  id      Int      @id @default(autoincrement())
+  ownerId String
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ok      Boolean
+  at      DateTime @default(now())
+
+  @@index([ownerId, at])
+}
+
+// Student list uploaded by a school. Signup must match an unclaimed row when the school has one.
+model RosterEntry {
+  id          String  @id @default(uuid())
+  school      String
+  schoolKey   String
+  studentId   String
+  rollNo      String
+  fullName    String
+  claimedById String? @unique
+
+  @@unique([schoolKey, studentId])
+}
